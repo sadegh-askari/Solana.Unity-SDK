@@ -11,7 +11,7 @@ namespace Solana.Unity.SDK
     [Serializable]
     public class SolanaWalletAdapterOptions
     {
-        public SolanaMobileWalletAdapterOptions solanaMobileWalletAdapterOptions;
+        //public SolanaMobileWalletAdapterOptions solanaMobileWalletAdapterOptions;
         public SolanaWalletAdapterWebGLOptions solanaWalletAdapterWebGLOptions;
         public PhantomWalletOptions phantomWalletOptions;
     }
@@ -24,7 +24,7 @@ namespace Solana.Unity.SDK
         {
             #if UNITY_ANDROID
             #pragma warning disable CS0618
-            _internalWallet = new SolanaMobileWalletAdapter(options.solanaMobileWalletAdapterOptions, rpcCluster, customRpcUri, customStreamingRpcUri, autoConnectOnStartup);
+            _internalWallet = new PhantomDeepLink(options.phantomWalletOptions, rpcCluster, customRpcUri, customStreamingRpcUri, autoConnectOnStartup);
             #elif UNITY_WEBGL
             #pragma warning disable CS0618
             _internalWallet = new SolanaWalletAdapterWebGL(options.solanaWalletAdapterWebGLOptions, rpcCluster, customRpcUri, customStreamingRpcUri, autoConnectOnStartup);

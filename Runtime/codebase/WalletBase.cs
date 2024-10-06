@@ -422,5 +422,10 @@ namespace Solana.Unity.SDK
             }
             return signaturesList;
         }
+        
+        public void SetExternalAccount(Account newAccount)
+        {
+            Account = newAccount;
+        }
     }
 }

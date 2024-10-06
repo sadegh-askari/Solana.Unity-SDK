@@ -54,18 +54,21 @@ namespace Solana.Unity.SDK
         private TaskCompletionSource<Web3AuthResponse> _taskCompletionSource;
         
         public event Action<Account> OnLoginNotify;
+        public event Action<string, string> OnLoginSuccess;
         public UserInfo userInfo;
 
         public Web3AuthWallet(Web3AuthWalletOptions web3AuthWalletOptions,
             RpcCluster rpcCluster = RpcCluster.DevNet,
             string customRpcUri = null,
             string customStreamingRpcUri = null,
-            bool autoConnectOnStartup = false
+            bool autoConnectOnStartup = false,
+            Provider provider = Provider.GOOGLE
             ) : base(rpcCluster, customRpcUri, customStreamingRpcUri, autoConnectOnStartup)
         {
             _web3AuthWalletOptions = web3AuthWalletOptions;
             var gameObject = new GameObject("Web3Auth");
             _web3Auth = gameObject.AddComponent<Web3Auth>();
+            _loginProvider = provider;
             var web3AuthOptions = new Web3AuthOptions
             {
                 redirectUrl = new Uri(_web3AuthWalletOptions.redirectUrl),
@@ -98,14 +101,17 @@ namespace Solana.Unity.SDK
             userInfo = response.userInfo;
             var keyBytes = ArrayHelpers.SubArray(Convert.FromBase64String(response.ed25519PrivKey), 0, 64);
             var wallet = new Wallet.Wallet(keyBytes);
+            
             if (_loginTaskCompletionSource != null)
             {
                 _loginTaskCompletionSource?.SetResult(wallet.Account);
+                OnLoginSuccess?.Invoke(response.userInfo.idToken, wallet.Account.PublicKey);
             }
             else
             {   
                 Account = wallet.Account;
                 OnLoginNotify?.Invoke(wallet.Account);
+                OnLoginSuccess?.Invoke(response.userInfo.idToken, wallet.Account.PublicKey);
             }
         }
 

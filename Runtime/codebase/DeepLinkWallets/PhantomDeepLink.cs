@@ -41,6 +41,8 @@ namespace Solana.Unity.SDK
         private TaskCompletionSource<Transaction> _signedTransactionTaskCompletionSource;
         private TaskCompletionSource<Transaction[]> _signedAllTransactionsTaskCompletionSource;
         private TaskCompletionSource<byte[]> _signedMessageTaskCompletionSource;
+        
+        public Action<string, string> OnError;
 
         public PhantomDeepLink(
             PhantomWalletOptions deepLinksWalletOptions,
@@ -280,6 +282,7 @@ namespace Solana.Unity.SDK
                 result.TryGetValue("errorCode", out var errorCode);
                 _signedAllTransactionsTaskCompletionSource?.TrySetResult(null);
                 Debug.LogError($"Deeplink error: Error: {errorMessage} + Data: {data}");
+                ParseErrorMessage(result);
                 return;
             }
 
@@ -303,6 +306,7 @@ namespace Solana.Unity.SDK
             if (!string.IsNullOrEmpty(errorMessage) || string.IsNullOrEmpty(data))
             {
                 Debug.LogError($"Deeplink error: Error: {errorMessage} + Data: {data}");
+                ParseErrorMessage(result);
                 return;
             }
             data = data.Replace("#", "");
@@ -324,6 +328,7 @@ namespace Solana.Unity.SDK
             if (!string.IsNullOrEmpty(errorMessage) || string.IsNullOrEmpty(data))
             {
                 Debug.LogError($"Deeplink error: Error: {errorMessage} + Data: {data}");
+                ParseErrorMessage(result);
                 return;
             }
             data = data.Replace("#", "");
@@ -344,6 +349,22 @@ namespace Solana.Unity.SDK
                 return new KeyValuePair<string, string>(valuePair[0], valuePair[1]);
             }) .ToDictionary((kvp) => kvp.Key, (kvp) => kvp.Value); 
             return dict;
+        }
+        
+        private void ParseErrorMessage(Dictionary<string, string> result)
+        {
+            result.TryGetValue("errorCode", out var errorCode);
+            result.TryGetValue("errorMessage", out var errorMessage);
+
+            Debug.LogError("Error Code: " + errorCode);
+
+            if (string.IsNullOrEmpty(errorCode))
+            {
+                errorCode = "-32603";
+            }
+
+            OnError?.Invoke(errorCode, errorMessage);
+            Debug.LogError($"Deeplink error: {errorCode} - {errorMessage}");
         }
 
         #endregion

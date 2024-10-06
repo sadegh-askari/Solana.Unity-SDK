@@ -101,7 +101,7 @@ namespace Solana.Unity.SDK.Utility
 
             while (!uwr.isDone && !token.IsCancellationRequested)
             {
-                await Task.Yield();
+                await UniTask.Yield();
             }
 
             if (uwr.result is UnityWebRequest.Result.ConnectionError or UnityWebRequest.Result.ProtocolError)
@@ -121,7 +121,7 @@ namespace Solana.Unity.SDK.Utility
             
             while (!uwr.isDone && !token.IsCancellationRequested)
             {
-                await Task.Yield();
+                await UniTask.Yield();
             }
 
             if (uwr.result == UnityWebRequest.Result.ConnectionError)

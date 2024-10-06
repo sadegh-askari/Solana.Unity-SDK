@@ -67,7 +67,7 @@ namespace Merkator.BitCoin
             return Encode(AddCheckSum(data));
         }
 
-        private static byte[] Decode(string s)
+        public static byte[] Decode(string s)
         {
             //Contract.Requires<ArgumentNullException>(s != null);
             //Contract.Ensures(Contract.Result<byte[]>() != null);

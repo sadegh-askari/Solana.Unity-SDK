@@ -19,6 +19,7 @@ namespace Solana.Unity.SDK
         
         private static TaskCompletionSource<Account> _loginTaskCompletionSource;
         private static TaskCompletionSource<Transaction> _signedTransactionTaskCompletionSource;
+        private TaskCompletionSource<Transaction[]> _signedAllTransactionsTaskCompletionSource;
         private static TaskCompletionSource<byte[]> _signedMessageTaskCompletionSource;        
         private static Transaction _currentTransaction;
         private static Account _account;
@@ -49,7 +50,31 @@ namespace Solana.Unity.SDK
 
         protected override Task<Transaction[]> _SignAllTransactions(Transaction[] transactions)
         {
-            throw new NotImplementedException();
+            _signedAllTransactionsTaskCompletionSource = new TaskCompletionSource<Transaction[]>();
+            StartSignAllTransactions(transactions);
+            return _signedAllTransactionsTaskCompletionSource.Task;
+        }
+        
+        private void StartSignAllTransactions(Transaction[] transactions)
+        {
+            // //_signedTransactionTaskCompletionSource = new TaskCompletionSource<Transaction>();
+            // var encode = Encoders.Base58.EncodeData(transaction.CompileMessage());
+            // _currentTransaction = transaction;
+            // ExternSignTransaction(encode, OnTransactionSigned);
+            // //return _signedTransactionTaskCompletionSource.Task;
+            //
+            // var url = Utils.CreateSignAllTransactionsDeepLink(
+            //     transactions: transactions,
+            //     phantomEncryptionPubKey: _phantomEncryptionPubKey,
+            //     connectionPublicKey: Encoders.Base58.EncodeData(PhantomConnectionAccountPublicKey),
+            //     phantomConnectionAccountPrivateKey: PhantomConnectionAccountPrivateKey,
+            //     baseUrl: _deepLinksWalletOptions.BaseUrl,
+            //     redirectScheme: _deepLinksWalletOptions.DeeplinkUrlScheme,
+            //     apiVersion: _deepLinksWalletOptions.ApiVersion,
+            //     sessionId: _sessionId,
+            //     cluster: GetCluster()
+            // );
+            // Application.OpenURL(url);
         }
 
         public override Task<byte[]> SignMessage(byte[] message)
