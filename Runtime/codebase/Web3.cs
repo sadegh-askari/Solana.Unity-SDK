@@ -17,7 +17,7 @@ namespace Solana.Unity.SDK
     /// It is a singleton that manages the connection to the Solana blockchain, allow to login, sign transactions,
     /// listen to events and more.
     /// </summary>
-    [RequireComponent(typeof(MainThreadDispatcher))]
+    //[RequireComponent(typeof(MainThreadDispatcher))]
     public class Web3 : MonoBehaviour
     {
         #region Variables
@@ -485,10 +485,10 @@ namespace Solana.Unity.SDK
         }
         #endregion
         
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        public static void Setup()
-        {
-            MainThreadUtil.Setup();
-        }
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        // public static void Setup()
+        // {
+        //     MainThreadUtil.Setup();
+        // }
     }
 }

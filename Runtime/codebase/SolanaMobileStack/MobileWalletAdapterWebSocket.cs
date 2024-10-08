@@ -1,15 +1,15 @@
 using System;
-using NativeWebSocket;
+using BestHTTP.WebSocket;
 using Solana.Unity.SDK;
 
 // ReSharper disable once CheckNamespace
 
 public class MobileWalletAdapterWebSocket: IMessageSender
 {
-    private readonly IWebSocket _webSocket;
+    private readonly WebSocket _webSocket;
     private readonly MobileWalletAdapterSession _session;
 
-    public MobileWalletAdapterWebSocket(IWebSocket webSocket, MobileWalletAdapterSession session)
+    public MobileWalletAdapterWebSocket(WebSocket webSocket, MobileWalletAdapterSession session)
     {
         _webSocket = webSocket;
         _session = session;

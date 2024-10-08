@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
-using NativeWebSocket;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using Solana.Unity.SDK;
 using UnityEngine;
 using Random = UnityEngine.Random;
-using WebSocket = NativeWebSocket.WebSocket;
-using WebSocketState = NativeWebSocket.WebSocketState;
+using WebSocket = BestHTTP.WebSocket;
 
 // ReSharper disable once CheckNamespace
 
@@ -16,7 +16,7 @@ public class LocalAssociationScenario
     private readonly TimeSpan _clientTimeoutMs;
     private readonly MobileWalletAdapterSession _session;
     private readonly int _port;
-    private readonly IWebSocket _webSocket;
+    private readonly WebSocket.WebSocket _webSocket;
     private AndroidJavaObject _nativeLocalAssociationScenario;
     private TaskCompletionSource<Response<object>> _startAssociationTaskCompletionSource;
 
@@ -31,28 +31,33 @@ public class LocalAssociationScenario
         var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
         _currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity");
         _clientTimeoutMs = TimeSpan.FromSeconds(clientTimeoutMs);
-        _port = Random.Range(WebSocketsTransportContract.WebsocketsLocalPortMin, WebSocketsTransportContract.WebsocketsLocalPortMax + 1);
+        _port = Random.Range(WebSocketsTransportContract.WebsocketsLocalPortMin,
+            WebSocketsTransportContract.WebsocketsLocalPortMax + 1);
         _session = new MobileWalletAdapterSession();
-        var webSocketUri = WebSocketsTransportContract.WebsocketsLocalScheme + "://" + WebSocketsTransportContract.WebsocketsLocalHost + ":" + _port + WebSocketsTransportContract.WebsocketsLocalPath;
-        _webSocket = WebSocket.Create(webSocketUri, WebSocketsTransportContract.WebsocketsProtocol);
-        _webSocket.OnOpen += () =>
+        var webSocketUri = WebSocketsTransportContract.WebsocketsLocalScheme + "://" +
+                           WebSocketsTransportContract.WebsocketsLocalHost + ":" + _port +
+                           WebSocketsTransportContract.WebsocketsLocalPath;
+
+        _webSocket = new WebSocket.WebSocket(new Uri(webSocketUri), string.Empty,
+            WebSocketsTransportContract
+                .WebsocketsProtocol); // WebSocket.Create(webSocketUri, WebSocketsTransportContract.WebsocketsProtocol);
+        _webSocket.OnOpen += socket =>
         {
-            if(_didConnect)return;
+            if (_didConnect) return;
             _didConnect = true;
             var helloReq = _session.CreateHelloReq();
             _webSocket.Send(helloReq);
             ListenKeyExchange();
         };
-        _webSocket.OnClose += (e) =>
+
+        _webSocket.OnClosed += (socket, code, message) =>
         {
             if (!_didConnect) return;
-            _webSocket.Connect(awaitConnection: false);
+            _webSocket.Open();
+            //_webSocket.Connect(awaitConnection: false);
         };
-        _webSocket.OnError += (e) =>
-        {
-            Debug.Log("WebSocket Error: " + e);
-        };
-        _webSocket.OnMessage += ReceivePublicKeyHandler;
+        _webSocket.OnError += (socket, reason) => { Debug.Log("WebSocket Error: " + reason); };
+        _webSocket.OnBinary += (socket, message) => ReceivePublicKeyHandler(message);
     }
 
 
@@ -62,25 +67,26 @@ public class LocalAssociationScenario
             throw new ArgumentException("Actions must be non-null and non-empty");
         _actions = new Queue<Action<IAdapterOperations>>(actions);
         var intent = LocalAssociationIntentCreator.CreateAssociationIntent(
-            _session.AssociationToken, 
+            _session.AssociationToken,
             _port);
         _currentActivity.Call("startActivityForResult", intent, 0);
         _currentActivity.Call("runOnUiThread", new AndroidJavaRunnable(TryConnectWs));
         _startAssociationTaskCompletionSource = new TaskCompletionSource<Response<object>>();
         return _startAssociationTaskCompletionSource.Task;
     }
-    
+
     private async void TryConnectWs()
     {
         var timeout = _clientTimeoutMs;
-        while (_webSocket.State != WebSocketState.Open && !_didConnect && timeout.TotalSeconds > 0)
+        while (_webSocket.State != WebSocket.WebSocketStates.Open && !_didConnect && timeout.TotalSeconds > 0)
         {
-            await _webSocket.Connect(awaitConnection: false);
+            _webSocket.Open();
             var timeDelta = TimeSpan.FromMilliseconds(500);
             timeout -= timeDelta;
-            await Task.Delay(timeDelta);
+            await UniTask.Delay(timeDelta);
         }
-        if (_webSocket.State != WebSocketState.Open)
+
+        if (_webSocket.State != WebSocket.WebSocketStates.Open)
         {
             Debug.Log("Error: timeout");
         }
@@ -105,7 +111,8 @@ public class LocalAssociationScenario
         var de = _session.DecryptSessionPayload(e);
         var message = System.Text.Encoding.UTF8.GetString(de);
         _client.Receive(message);
-        var receivedResponse = JsonConvert.DeserializeObject<Response<object>>(message);;
+        var receivedResponse = JsonConvert.DeserializeObject<Response<object>>(message);
+        ;
         ExecuteNextAction(receivedResponse);
     }
 
@@ -117,9 +124,9 @@ public class LocalAssociationScenario
             _session.GenerateSessionEcdhSecret(m);
             var messageSender = new MobileWalletAdapterWebSocket(_webSocket, _session);
             _client = new MobileWalletAdapterClient(messageSender);
-            _webSocket.OnMessage -= ReceivePublicKeyHandler;
-            _webSocket.OnMessage += HandleEncryptedSessionPayload;
-            
+            _webSocket.OnBinary -= (socket, message) => ReceivePublicKeyHandler(message);
+            _webSocket.OnBinary += (socket, message) => HandleEncryptedSessionPayload(message);
+
             // Executing the first action
             ExecuteNextAction();
         }
@@ -139,9 +146,9 @@ public class LocalAssociationScenario
 
     private async void CloseAssociation(Response<object> response)
     {
-        _webSocket.OnMessage -= HandleEncryptedSessionPayload;
+        _webSocket.OnBinary -= (socket, message) => HandleEncryptedSessionPayload(message);
         _handledEncryptedMessage = true;
-        await _webSocket.Close();
+        _webSocket.Close();
         _startAssociationTaskCompletionSource.SetResult(response);
     }
 }
