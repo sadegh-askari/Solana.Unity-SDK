@@ -18,6 +18,7 @@ namespace Solana.Unity.SDK.Exporters
         [UnityEditor.Callbacks.DidReloadScripts]
         private static void OnScriptsReloaded()
         {
+            return;
             var destinationRootFolder = Path.GetFullPath("Assets/Resources/SolanaUnitySDK/");
             var sourceRootFolder = Path.GetFullPath("Packages/com.solana.unity_sdk/Runtime/codebase/Prefabs/");
 
