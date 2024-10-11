@@ -22,6 +22,7 @@ using System.IO;
 public static class WebGLTemplatesExporter {
     [UnityEditor.Callbacks.DidReloadScripts]
     private static void OnScriptsReloaded() {
+        return;
         var destinationRootFolder = Path.GetFullPath("Assets/WebGLTemplates/");
         var sourceRootFolder = Path.GetFullPath("Packages/com.solana.unity_sdk/Runtime/codebase/WebGLTemplates/");
 

@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using AOT;
+using Blockchain;
 using Solana.Unity.Rpc.Models;
 using Solana.Unity.Wallet;
 using UnityEngine;
@@ -30,6 +31,8 @@ namespace Solana.Unity.SDK
         private static TaskCompletionSource<byte[]> _signedMessageTaskCompletionSource;
         private static Transaction[] _currentTransactions;
         private static Account _account;
+        
+        public static Action<string, string> OnError;
         public static GameObject WalletAdapterUI { get; private set; }
 
         [Serializable]
@@ -220,6 +223,7 @@ namespace Solana.Unity.SDK
             {
                 _loginTaskCompletionSource.TrySetException(new Exception("Login cancelled"));
                 _loginTaskCompletionSource.TrySetResult(null);
+                OnError?.Invoke(WalletErrors.ErrorMinus32603.ToString(), "Login cancelled");
                 return;
             }
 
@@ -239,6 +243,7 @@ namespace Solana.Unity.SDK
             {
                 _signedTransactionTaskCompletionSource.TrySetException(new Exception("Transaction signing cancelled"));
                 _signedTransactionTaskCompletionSource.TrySetResult(null);
+                OnError?.Invoke(WalletErrors.ErrorMinus32603.ToString(), "Transaction signing cancelled");
                 return;
             }
 
@@ -258,6 +263,8 @@ namespace Solana.Unity.SDK
                 _signedAllTransactionsTaskCompletionSource.TrySetException(
                     new Exception("Transactions signing cancelled"));
                 _signedAllTransactionsTaskCompletionSource.TrySetResult(null);
+                OnError?.Invoke(WalletErrors.ErrorMinus32603.ToString(), "Transactions signing cancelled");
+                
                 return;
             }
 
@@ -285,6 +292,8 @@ namespace Solana.Unity.SDK
             {
                 _signedMessageTaskCompletionSource.TrySetException(new Exception("Message signing cancelled"));
                 _signedMessageTaskCompletionSource.TrySetResult(null);
+
+                OnError?.Invoke(WalletErrors.ErrorMinus32603.ToString(), "Message signing cancelled");
                 return;
             }
 
