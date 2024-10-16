@@ -13,7 +13,7 @@ using System.Text;
 
 public class KeyStoreManagerUtils
 {
-#if UNITY_IOS && !UNITY_EDITOR
+#if UNITY_IOS
     [DllImport("__Internal")]
     extern static int web3auth_keystore_set(string key, string value);
 
@@ -49,14 +49,14 @@ public class KeyStoreManagerUtils
 
     static KeyStoreManagerUtils()
     {
-#if !UNITY_IOS || UNITY_EDITOR
+#if !UNITY_IOS
         SecurePlayerPrefs.Init();
 #endif
     }
 
     public static void savePreferenceData(string key, string value)
     {
-#if UNITY_IOS && !UNITY_EDITOR
+#if UNITY_IOS
         web3auth_keystore_set(key, value);
 #else
         SecurePlayerPrefs.SetString(key, value);
@@ -65,7 +65,7 @@ public class KeyStoreManagerUtils
 
     public static string getPreferencesData(string key)
     {
-#if UNITY_IOS && !UNITY_EDITOR
+#if UNITY_IOS
         return web3auth_keystore_get(key);
 #else
         return SecurePlayerPrefs.GetString(key);
@@ -73,7 +73,7 @@ public class KeyStoreManagerUtils
     }
     public static void deletePreferencesData(string key)
     {
-#if UNITY_IOS && !UNITY_EDITOR
+#if UNITY_IOS
         web3auth_keystore_delete(key);
 #else
         SecurePlayerPrefs.DeleteKey(key);

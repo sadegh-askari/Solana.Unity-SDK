@@ -132,7 +132,14 @@ public class Web3Auth : MonoBehaviour
 
     private void onDeepLinkActivated(string url)
     {
-        this.setResultUrl(new Uri(url));
+        try
+        {
+            setResultUrl(new Uri(url));
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning(e.Message);
+        }
     }
 
 #if UNITY_STANDALONE || UNITY_EDITOR

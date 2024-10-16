@@ -107,7 +107,6 @@ namespace Solana.Unity.SDK
         
         public static Action<Account> OnLogin;
         public static Action OnLogout;
-        public static Action OnWebSocketConnect;
 
         private static double _solAmount = 0;
         public delegate void BalanceChange(double sol);
@@ -179,13 +178,16 @@ namespace Solana.Unity.SDK
             {
                 // Try to login if Web3auth session is detected
                 _web3AuthWallet ??= new Web3AuthWallet(web3AuthWalletOptions, rpcCluster, customRpc, webSocketsRpc);
-                _web3AuthWallet.OnLoginNotify += (w) =>
-                { 
-                    if(w == null) return;
-                    WalletBase = _web3AuthWallet;
-                    OnWalletChangeStateInternal?.Invoke();
-                    SubscribeToWalletEvents().Forget();
-                };
+                // _web3AuthWallet.OnLoginNotify += (w) =>
+                // { 
+                //     Debug.Log("We3Auth session detected");
+                //     Debug.Log("Wallet address: " + w?.PublicKey);
+                //     if(w == null) return;
+                //     WalletBase = _web3AuthWallet;
+                //     OnLogin?.Invoke(w);
+                //     OnWalletChangeStateInternal?.Invoke();
+                //     SubscribeToWalletEvents().Forget();
+                // };
             }
             catch (Exception e)
             {
@@ -237,16 +239,6 @@ namespace Solana.Unity.SDK
             _web3AuthWallet ??=
                 new Web3AuthWallet(web3AuthWalletOptions, rpcCluster, customRpc, webSocketsRpc, autoConnectOnStartup);
             var acc = await _web3AuthWallet.LoginWithProvider(provider);
-            if (acc != null)
-                WalletBase = _web3AuthWallet;
-            return acc;
-        }
-        
-        public async Task<Account> LoginWeb3Auth(LoginParams loginParams)
-        {
-            _web3AuthWallet ??=
-                new Web3AuthWallet(web3AuthWalletOptions, rpcCluster, customRpc, webSocketsRpc, autoConnectOnStartup);
-            var acc = await _web3AuthWallet.LoginWithParams(loginParams);
             if (acc != null)
                 WalletBase = _web3AuthWallet;
             return acc;
@@ -331,7 +323,7 @@ namespace Solana.Unity.SDK
         /// Notify all registered listeners
         /// </summary>
         /// <param name="commitment"></param>
-        public static async UniTask UpdateBalance(Commitment commitment = Commitment.Processed)
+        public static async UniTask UpdateBalance(Commitment commitment = Commitment.Confirmed)
         {
             if (Instance == null || Instance.WalletBase == null)
                 return;
@@ -345,7 +337,7 @@ namespace Solana.Unity.SDK
         /// Notify all registered listeners
         /// </summary>
         /// <param name="commitment"></param>
-        public static async UniTask UpdateNFTs(Commitment commitment = Commitment.Processed)
+        public static async UniTask UpdateNFTs(Commitment commitment = Commitment.Confirmed)
         {
             if(_isLoadingNfts) return;
             _isLoadingNfts = true;
@@ -365,7 +357,7 @@ namespace Solana.Unity.SDK
             bool loadTexture = true, 
             bool notifyRegisteredListeners = true,
             int requestsMillisecondsDelay = 0,
-            Commitment commitment = Commitment.Processed)
+            Commitment commitment = Commitment.Confirmed)
         {
             loadTexture = LoadNftsTextureByDefault ?? loadTexture;
             if(Wallet == null) return null;
@@ -416,7 +408,7 @@ namespace Solana.Unity.SDK
                         requestsMillisecondsDelay = Mathf.Max(requestsMillisecondsDelay, 100, NftLoadingRequestsDelay);
                     }
                     if (requestsMillisecondsDelay > 0) await UniTask.Delay(requestsMillisecondsDelay);
-                    await UniTask.SwitchToMainThread();
+
                     var tNft = Nft.Nft.TryGetNftData(item.Account.Data.Parsed.Info.Mint, Rpc, loadTexture: loadTexture).AsUniTask();
                     loadingTasks.Add(tNft);
                     tNft.ContinueWith(nft =>
@@ -437,11 +429,10 @@ namespace Solana.Unity.SDK
             return nfts;
         }
 
-        private static async UniTask SubscribeToWalletEvents(Commitment commitment = Commitment.Processed)
+        private static async UniTask SubscribeToWalletEvents(Commitment commitment = Commitment.Confirmed)
         {
             if(WsRpc == null) return;
             await Wallet.AwaitWsRpcConnection();
-            OnWebSocketConnect?.Invoke();
             await WsRpc.SubscribeAccountInfoAsync(
                 Account.PublicKey,
                 (_, accountInfo) =>

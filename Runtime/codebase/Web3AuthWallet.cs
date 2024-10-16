@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
+using Merkator.BitCoin;
 using Merkator.Tools;
+using Newtonsoft.Json;
 using Solana.Unity.Wallet;
 using Solana.Unity.Rpc.Models;
+using Solana.Unity.Wallet.Utilities;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -16,46 +20,26 @@ namespace Solana.Unity.SDK
         public string appName = "Web3Auth Sample App";
         public string logoLight;
         public string logoDark;
-        public Web3Auth.Language defaultLanguage = Web3Auth.Language.en;
-        public Web3Auth.ThemeModes mode = Web3Auth.ThemeModes.auto;
+        public string defaultLanguage = "en";
+        public bool dark = true;
         public string themeName = "primary";
         public string themeColor = "#123456";
         public string redirectUrl = "torusapp://com.torus.Web3AuthUnity/auth";
         public string clientId = "BAwFgL-r7wzQKmtcdiz2uHJKNZdK7gzEf2q-m55xfzSZOw8jLOyIi4AVvvzaEQO5nv2dFLEmf9LBkF8kaq3aErg";
         public Web3Auth.Network network = Web3Auth.Network.TESTNET;
-        public List<LoginConfig> loginConfig = null;
     }
-    
-    [Serializable]
-    public class LoginConfig
-    {
-        public string verifier = "**-google-auth";
-        public TypeOfLogin typeOfLogin = TypeOfLogin.GOOGLE;
-        public string name = "google";
-        public string description;
-        public string clientId = "1243-[...]";
-        public string verifierSubIdentifier;
-        public string logoHover;
-        public string logoLight;
-        public string logoDark;
-        public bool mainOption = false;
-        public bool showOnModal = true;
-        public bool showOnDesktop = true;
-        public bool showOnMobile = true;
-    }
-    
+
     public class Web3AuthWallet : WalletBase
     {
         private readonly Web3Auth _web3Auth;
         private TaskCompletionSource<Account> _loginTaskCompletionSource;
         private readonly Web3AuthWalletOptions _web3AuthWalletOptions;
         private Provider _loginProvider = Provider.GOOGLE;
-        private LoginParams _loginParameters;
         private TaskCompletionSource<Web3AuthResponse> _taskCompletionSource;
-        
-        public event Action<Account> OnLoginNotify;
+
+        public event Action<string, Account> OnLoginNotify;
         public event Action<string, string> OnLoginSuccess;
-        public UserInfo userInfo;
+        
 
         public Web3AuthWallet(Web3AuthWalletOptions web3AuthWalletOptions,
             RpcCluster rpcCluster = RpcCluster.DevNet,
@@ -69,6 +53,9 @@ namespace Solana.Unity.SDK
             var gameObject = new GameObject("Web3Auth");
             _web3Auth = gameObject.AddComponent<Web3Auth>();
             _loginProvider = provider;
+            var language = Enum.TryParse<Web3Auth.Language>(_web3AuthWalletOptions.defaultLanguage, out var lang)
+                ? lang
+                : Web3Auth.Language.en;
             var web3AuthOptions = new Web3AuthOptions
             {
                 redirectUrl = new Uri(_web3AuthWalletOptions.redirectUrl),
@@ -79,39 +66,55 @@ namespace Solana.Unity.SDK
                     appName = _web3AuthWalletOptions.appName,
                     logoLight = _web3AuthWalletOptions.logoLight,
                     logoDark = _web3AuthWalletOptions.logoDark,
-                    defaultLanguage = _web3AuthWalletOptions.defaultLanguage,
-                    mode = _web3AuthWalletOptions.mode,
+                    defaultLanguage = language,
+                    mode = _web3AuthWalletOptions.dark? Web3Auth.ThemeModes.dark: Web3Auth.ThemeModes.auto,
                     theme = new Dictionary<string, string>
                     {
                         {
                             _web3AuthWalletOptions.themeName,
                             _web3AuthWalletOptions.themeColor
                         }
-                    },
+                    }
                 }
             };
-            if(_web3AuthWalletOptions.loginConfig is { Count: > 0 })
-                web3AuthOptions.loginConfig = BuildLoginConfigDictionary(_web3AuthWalletOptions.loginConfig);
             _web3Auth.setOptions(web3AuthOptions);
             _web3Auth.onLogin += OnLogin;
         }
 
         private void OnLogin(Web3AuthResponse response)
         {
-            userInfo = response.userInfo;
-            var keyBytes = ArrayHelpers.SubArray(Convert.FromBase64String(response.ed25519PrivKey), 0, 64);
-            var wallet = new Wallet.Wallet(keyBytes);
+            // Debug.Log("Web3AuthWallet OnLogin: " + JsonConvert.SerializeObject(response));
+            // var keyBytes = ArrayHelpers.SubArray(Convert.FromBase64String(response.ed25519PrivKey), 0, 64);
+            // var wallet = new Wallet.Wallet(keyBytes);
+            
+            var privateByteArray = new List<byte>();
+            for (var i = 0; i < response.ed25519PrivKey.Length; i += 2)
+            {
+                var bt = Convert.ToByte(response.ed25519PrivKey.Substring(i, 2), 16);
+                privateByteArray.Add(bt);
+            }
+
+            var privateKey = Base58Encoding.Encode(privateByteArray.ToArray());
+            var publicKeyHex = response.ed25519PrivKey.Substring(response.privKey.Length);
+            var publicByteArray = new List<byte>();
+            for (var i = 0; i < publicKeyHex.Length; i += 2)
+            {
+                var bt = Convert.ToByte(publicKeyHex.Substring(i, 2), 16);
+                publicByteArray.Add(bt);
+            }
+
+            var publicKey = new Base58Encoder().EncodeData(publicByteArray.ToArray());
             
             if (_loginTaskCompletionSource != null)
             {
-                _loginTaskCompletionSource?.SetResult(wallet.Account);
-                OnLoginSuccess?.Invoke(response.userInfo.idToken, wallet.Account.PublicKey);
+                _loginTaskCompletionSource?.SetResult(new Account(privateKey, publicKey));
+                OnLoginSuccess?.Invoke(response.userInfo.idToken, publicKey);
             }
             else
             {   
-                Account = wallet.Account;
-                OnLoginNotify?.Invoke(wallet.Account);
-                OnLoginSuccess?.Invoke(response.userInfo.idToken, wallet.Account.PublicKey);
+                Account = new Account(privateKey, publicKey);
+                OnLoginNotify?.Invoke(response.userInfo.idToken, Account);
+                OnLoginSuccess?.Invoke(response.userInfo.idToken, publicKey);
             }
         }
 
@@ -121,12 +124,9 @@ namespace Solana.Unity.SDK
                 return Task.FromResult(Account);
             var options = new LoginParams
             {
-                loginProvider = _loginProvider
+                loginProvider = _loginProvider,
+                curve = Curve.ED25519
             };
-            if (_loginParameters != null)
-            {
-                options = _loginParameters;
-            }
             _web3Auth.login(options);
             _loginTaskCompletionSource = new TaskCompletionSource<Account>();
             return _loginTaskCompletionSource.Task;
@@ -169,42 +169,5 @@ namespace Solana.Unity.SDK
             _loginProvider = provider;
             return Login();
         }
-        
-        public Task<Account> LoginWithParams(LoginParams loginParams)
-        {
-            _loginParameters = loginParams;
-            return Login();
-        }
-
-        #region Utils
-
-        public Dictionary<string, LoginConfigItem> BuildLoginConfigDictionary(List<LoginConfig> loginConfigList) {
-            if (loginConfigList == null) return null;
-            var dictionary = new Dictionary<string, LoginConfigItem>();
-
-            foreach (var config in loginConfigList) {
-                var loginConfigItem = new LoginConfigItem {
-                    verifier = config.verifier,
-                    typeOfLogin = config.typeOfLogin,
-                    name = config.name,
-                    description = config.description,
-                    clientId = config.clientId,
-                    verifierSubIdentifier = config.verifierSubIdentifier,
-                    logoHover = config.logoHover,
-                    logoLight = config.logoLight,
-                    logoDark = config.logoDark,
-                    mainOption = config.mainOption,
-                    showOnModal = config.showOnModal,
-                    showOnDesktop = config.showOnDesktop,
-                    showOnMobile = config.showOnMobile
-                };
-
-                dictionary.Add(config.name, loginConfigItem);
-            }
-
-            return dictionary;
-        }
-
-        #endregion
     }
 }
