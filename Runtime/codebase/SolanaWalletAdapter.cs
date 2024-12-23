@@ -19,6 +19,7 @@ namespace Solana.Unity.SDK
     public class SolanaWalletAdapter: WalletBase
     {
         private readonly WalletBase _internalWallet;
+        public WalletBase InternalWallet => _internalWallet;
 
         public SolanaWalletAdapter(SolanaWalletAdapterOptions options, RpcCluster rpcCluster = RpcCluster.DevNet, string customRpcUri = null, string customStreamingRpcUri = null, bool autoConnectOnStartup = false) : base(rpcCluster, customRpcUri, customStreamingRpcUri, autoConnectOnStartup)
         {
