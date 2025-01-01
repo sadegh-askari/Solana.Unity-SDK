@@ -1,0 +1,16 @@
+{
+    "name": "Solana.Unity.SDK.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:ac7dd6104157edd4c8b8fdd1f074f70f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

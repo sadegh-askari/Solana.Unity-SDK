@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using AOT;
-using Blockchain;
 using Solana.Unity.Rpc.Models;
 using Solana.Unity.Wallet;
 using UnityEngine;
@@ -33,6 +32,18 @@ namespace Solana.Unity.SDK
         
         public static Action<string, string> OnError;
         public static GameObject WalletAdapterUI { get; private set; }
+        
+        public enum WalletErrors
+        {
+            Error4900 = 4900,
+            Error4100 = 4100,
+            Error4001 = 4001,
+            ErrorMinus32000 = -32000,
+            ErrorMinus32002 = -32002,
+            ErrorMinus32003 = -32003,
+            ErrorMinus32601 = -32601,
+            ErrorMinus32603 = -32603
+        }
 
         [Serializable]
         public class WalletSpecs
