@@ -14,7 +14,7 @@ public class BuildPostProcess
     public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
     {
 #if UNITY_IOS
-        
+        return;
         Uri uri = null;
         
         try

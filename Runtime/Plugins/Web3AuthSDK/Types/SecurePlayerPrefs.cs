@@ -9,7 +9,7 @@ using System.Text;
  * This uses DES Encryption to encrypt your player prefs.
  *
  * @author Rawand Fatih (rawandnf@gmail.com)
- * Copyright © 2014 Rawand Fatih
+ * Copyright Â© 2014 Rawand Fatih
  */
 public class SecurePlayerPrefs
 {

@@ -13,16 +13,16 @@ using System.Text;
 
 public class KeyStoreManagerUtils
 {
-#if UNITY_IOS
-    [DllImport("__Internal")]
-    extern static int web3auth_keystore_set(string key, string value);
-
-    [DllImport("__Internal")]
-    extern static string web3auth_keystore_get(string key);
-
-    [DllImport("__Internal")]
-    extern static int web3auth_keystore_delete(string key);
-#endif
+// #if UNITY_IOS
+//     [DllImport("__Internal")]
+//     extern static int web3auth_keystore_set(string key, string value);
+//
+//     [DllImport("__Internal")]
+//     extern static string web3auth_keystore_get(string key);
+//
+//     [DllImport("__Internal")]
+//     extern static int web3auth_keystore_delete(string key);
+// #endif
 
     public static string SESSION_ID = "sessionId";
     public static string IV_KEY = "ivKey";
@@ -50,35 +50,35 @@ public class KeyStoreManagerUtils
 
     static KeyStoreManagerUtils()
     {
-#if !UNITY_IOS
+//#if !UNITY_IOS
         SecurePlayerPrefs.Init();
-#endif
+//#endif
     }
 
     public static void savePreferenceData(string key, string value)
     {
-#if UNITY_IOS
-        web3auth_keystore_set(key, value);
-#else
+// #if UNITY_IOS
+//         web3auth_keystore_set(key, value);
+// #else
         SecurePlayerPrefs.SetString(key, value);
-#endif
+//#endif
     }
 
     public static string getPreferencesData(string key)
     {
-#if UNITY_IOS
-        return web3auth_keystore_get(key);
-#else
+// #if UNITY_IOS
+//         return web3auth_keystore_get(key);
+// #else
         return SecurePlayerPrefs.GetString(key);
-#endif
+//#endif
     }
     public static void deletePreferencesData(string key)
     {
-#if UNITY_IOS
-        web3auth_keystore_delete(key);
-#else
+// #if UNITY_IOS
+//         web3auth_keystore_delete(key);
+// #else
         SecurePlayerPrefs.DeleteKey(key);
-#endif
+//#endif
     }
 
     public static AsymmetricCipherKeyPair generateECKeyPair()

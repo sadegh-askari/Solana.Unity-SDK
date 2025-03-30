@@ -13,6 +13,7 @@ public class AndroidBuildPostProcess : IPostGenerateGradleAndroidProject
 
     public void OnPostGenerateGradleAndroidProject(string path)
     {
+        return;
         Uri uri = null;
 
         try
