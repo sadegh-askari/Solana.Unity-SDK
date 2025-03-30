@@ -18,8 +18,9 @@
   "documentationUrl": "https://solana.unity-sdk.gg/",
   "changelogUrl": "https://github.com/garbles-labs/Solana.Unity-SDK/releases",
   "author": {
-    "name" : "Magicblock",
-    "url" : "https://www.magicblock.gg/"
+    "name": "Magicblock",
+    "url": "https://www.magicblock.gg/"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "_fingerprint": "99637c469be1561542e67dcd0783b15acd36139d"
 }

@@ -52,6 +52,7 @@ namespace Solana.Unity.SDK
             _web3AuthWalletOptions = web3AuthWalletOptions;
             var gameObject = new GameObject("Web3Auth");
             _web3Auth = gameObject.AddComponent<Web3Auth>();
+            _web3Auth.Initialize(_web3AuthWalletOptions.clientId, _web3AuthWalletOptions.redirectUrl, _web3AuthWalletOptions.network);
             _loginProvider = provider;
             var language = Enum.TryParse<Web3Auth.Language>(_web3AuthWalletOptions.defaultLanguage, out var lang)
                 ? lang
@@ -104,6 +105,7 @@ namespace Solana.Unity.SDK
             }
 
             var publicKey = new Base58Encoder().EncodeData(publicByteArray.ToArray());
+//            Debug.LogError("Token: " + response.userInfo.idToken + "\nPublicKey: " + publicKey);
             
             if (_loginTaskCompletionSource != null)
             {
@@ -125,7 +127,8 @@ namespace Solana.Unity.SDK
             var options = new LoginParams
             {
                 loginProvider = _loginProvider,
-                curve = Curve.ED25519
+                curve = Curve.ED25519,
+                redirectUrl = null,
             };
             _web3Auth.login(options);
             _loginTaskCompletionSource = new TaskCompletionSource<Account>();
