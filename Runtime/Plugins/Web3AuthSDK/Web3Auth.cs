@@ -444,6 +444,13 @@ public class Web3Auth : MonoBehaviour
         }
         string sessionId = sessionResponse.sessionId;
         this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.SESSION_ID, sessionId));
+        
+#if UNITY_WEBGL && !UNITY_EDITOR
+        if (string.IsNullOrEmpty(redirectUrl))
+        {
+            redirectUrl = Utils.GetCurrentURL();
+        }
+#endif
         this.Enqueue(() => KeyStoreManagerUtils.savePreferenceData(KeyStoreManagerUtils.REDIRECT_URL, redirectUrl));
 
         //call authorize session API
